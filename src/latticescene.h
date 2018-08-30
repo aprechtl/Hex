@@ -34,7 +34,7 @@ protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
     void drawForeground(QPainter *painter, const QRectF &rect);
     void mousePressEvent(QGraphicsSceneMouseEvent *event);
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *);
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
 private:
     void drawButtonSet(QPainter *painter, const QRectF &rect, const SimpleVector<unsigned int> &indices);
@@ -49,12 +49,11 @@ private:
     QBrush lightButtonBrush;
     QBrush lightLaneBrush;
     QBrush pressedButtonBrush;
-    bool buttonIsClicked;
 
     QRectF buttonRect;
     QPainterPath buttonPath;
-    short pressedButtonJ;
-    short pressedButtonK;
+    SimpleVector<short> pressedButtonsJ;
+    SimpleVector<short> pressedButtonsK;
 };
 
 #endif

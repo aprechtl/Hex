@@ -14,7 +14,8 @@ LatticeScene::LatticeScene(LatticeData *latticeData, QObject *parent)
       lightButtonBrush(Qt::SolidPattern),
       lightLaneBrush(Qt::SolidPattern),
       pressedButtonBrush(Qt::SolidPattern),
-      buttonIsClicked(false)
+      pressedButtonsJ(16),
+      pressedButtonsK(16)
 {
 }
 
@@ -102,8 +103,18 @@ void LatticeScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
     if (buttonIndex == -1)
         return;
 
-    buttonIsClicked = true;
+    short pressedButtonJ, pressedButtonK;
     HexSettings::convertNoteLaneIndexToJK(buttonIndex, pressedButtonJ, pressedButtonK);
+
+    // ensure we don't already have this button press
+    for (int i = 0; i < pressedButtonsJ.size(); ++i)
+    {
+        if (pressedButtonsJ.at(i) == pressedButtonJ && pressedButtonsK.at(i) == pressedButtonK)
+            return;
+    }
+
+    pressedButtonsJ.appendSafely(pressedButtonJ);
+    pressedButtonsK.appendSafely(pressedButtonK);
 
     // this will light up the button
     midiEventHandler->sendAndRecordNoteOn(pressedButtonJ, pressedButtonK, 90);
@@ -111,15 +122,31 @@ void LatticeScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
     event->accept();
 }
 
-void LatticeScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *)
+void LatticeScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (!buttonIsClicked)
+    int buttonIndex = visibleButtonAt(event->scenePos());
+
+    if (buttonIndex == -1)
         return;
 
-    buttonIsClicked = false;
+    short pressedButtonJ, pressedButtonK;
+    HexSettings::convertNoteLaneIndexToJK(buttonIndex, pressedButtonJ, pressedButtonK);
 
-    // this will unlight the button
-    midiEventHandler->sendAndRecordNoteOff(pressedButtonJ, pressedButtonK);
+    // find the button press and remove it
+    for (int i = 0; i < pressedButtonsJ.size(); ++i)
+    {
+        if (pressedButtonsJ.at(i) == pressedButtonJ && pressedButtonsK.at(i) == pressedButtonK)
+        {
+            pressedButtonsJ.removeIndex(i);
+            pressedButtonsK.removeIndex(i);
+
+            // this will unlight the button
+            midiEventHandler->sendAndRecordNoteOff(pressedButtonJ, pressedButtonK);
+
+            event->accept();
+            return;
+        }
+    }
 }
 
 int LatticeScene::visibleButtonAt(const QPointF &point)
